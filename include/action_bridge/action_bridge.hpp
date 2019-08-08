@@ -53,6 +53,9 @@ public:
   {
     server_.start();
     client_ = rclcpp_action::create_client<ROS2_T>(ros2_node, action_name);
+    std::cout << "Looking for a ROS2 action server named " << action_name << std::endl;
+    if (!client_->wait_for_action_server(std::chrono::seconds(1)))
+      std::cout << "ROS2 action server not started yet" << std::endl;
   }
 
   void cancel_cb(ROS1GoalHandle gh1)
@@ -152,6 +155,7 @@ private:
       {
         auto goal_handle = gh2_future.get();
         if (!goal_handle) {
+          std::cout << "Could not find goal_handle" <<std::endl;
           gh1_.setRejected(); // goal was not accepted by remote server
           return;
         }
