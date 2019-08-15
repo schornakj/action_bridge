@@ -37,8 +37,6 @@
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <action_tutorials/action/fibonacci.hpp>
 
-//#include <boost/scoped_ptr.hpp>
-
 #include <algorithm>
 #include <map>
 #include <mutex>
@@ -67,8 +65,8 @@ public:
 //  using ROS1GoalHandle = typename actionlib::ActionClient<ROS1_T>::GoalHandle;
 //  using ROS1Client = typename actionlib::ActionClient<ROS1_T>;
 
-//  using ROS2SendGoalOptions = typename rclcpp_action::Client<ROS2_T>::SendGoalOptions;
-//  using ROS2ServerSharedPtr = typename rclcpp_action::Server<ROS2_T>::SharedPtr;
+  using ROS2SendGoalOptions = typename rclcpp_action::Client<ROS2_T>::SendGoalOptions;
+  using ROS2ServerSharedPtr = typename rclcpp_action::Server<ROS2_T>::SharedPtr;
 
   ActionBridge(ros::NodeHandle ros1_node,
                rclcpp::Node::SharedPtr ros2_node,
@@ -76,9 +74,8 @@ public:
     : ros1_node_(ros1_node)
     , ros2_node_(ros2_node)
     , client_(action_name, true)
+    , active_(false)
   {
-//    client_.reset(new actionlib::ActionClient<ROS1_T>(ros1_node_, action_name, &callback_queue)); // ROS1 action client
-
     server_ = rclcpp_action::create_server<ROS2_T>(ros2_node_->get_node_base_interface(),
                                                    ros2_node_->get_node_clock_interface(),
                                                    ros2_node_->get_node_logging_interface(),
@@ -101,17 +98,19 @@ public:
       std::shared_ptr<const ROS2Goal> goal)
   {
     (void)uuid;
-//    TODO: if ROS1 server rejects the goal, we should reject the goal here
-//      if (false) {
-//        return rclcpp_action::GoalResponse::REJECT;
-//      }
-      return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+    if(active_)
+    {
+      std::cout << "Already have an action goal, and current implementation only handles one action goal at a time: rejecting.";
+      return rclcpp_action::GoalResponse::REJECT;
+    }
+//    TODO: Ideally if the ROS1 action server returned a rejected state we'd reject the goal here
+//    Not sure how this would work with the Simple Action Server
+    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
   }
 
   rclcpp_action::CancelResponse handle_cancel(
       const std::shared_ptr<ROS2GoalHandle> goal_handle)
   {
-    // TODO: Pass along cancellation to ROS1 server
       (void)goal_handle;
       client_.cancelGoal();
       return rclcpp_action::CancelResponse::ACCEPT;
@@ -124,71 +123,64 @@ public:
 
   void goal_execute(const std::shared_ptr<ROS2GoalHandle> goal_handle)
   {
-    std::cout << "Executing goal" << std::endl;
-    ROS1Goal goal1;
-    translate_goal_2_to_1(*goal_handle.get_goal(), goal1);
+    active_ = true;
+    std::cout << "Sending goal" << std::endl;
+    goalhandle_ros2_ = goal_handle;
 
-    client_.sendGoal(goal1, );
-    // TODO: make ROS1 server execute the goal
+    ROS1Goal goal1;
+    translate_goal_2_to_1(*(goalhandle_ros2_->get_goal()), goal1);
+
+    client_.sendGoal(goal1,
+                     std::bind(&ActionBridge::handle_done, this, std::placeholders::_1, std::placeholders::_2),
+                     std::bind(&ActionBridge::handle_active, this),
+                     std::bind(&ActionBridge::handle_feedback, this, std::placeholders::_1));
   }
 
-  void handle_done(const actionlib::SimpleClientGoalState& state,
-                   const ROS1Result::ConstPtr)
+  void handle_done(const actionlib::SimpleClientGoalState& state1,
+                   const ROS1Result::ConstPtr& result1)
   {
+    std::cout << "Goal is done" << std::endl;
 
+    auto result2 = std::make_shared<ROS2Result>();
+    translate_result_1_to_2(*result2, *result1);
+
+    if (state1.state_ == actionlib::SimpleClientGoalState::SUCCEEDED)
+    {
+      std::cout << "State is SUCCEEDED: succeeding" << std::endl;
+      goalhandle_ros2_->succeed(result2);
+    }
+    else if (state1.state_ == actionlib::SimpleClientGoalState::ABORTED)
+    {
+      std::cout << "State is ABORTED: abort" << std::endl;
+      goalhandle_ros2_->abort(result2);
+    }
+    else if (state1.state_ == actionlib::SimpleClientGoalState::REJECTED)
+    {
+      std::cout << "State is REJECTED: cancelling" << std::endl;
+      goalhandle_ros2_->canceled(result2);  // TODO: handle differently?
+    }
+    else
+    {
+      std::cout << "Some other (probably bad) state: abort" << std::endl;
+      goalhandle_ros2_->abort(result2);
+    }
+
+    active_ = false;
   }
 
   void handle_active()
   {
-
+    std::cout << "Goal is active" << std::endl;
   }
 
-  void handle_feedback(const ROS1Result::ConstPtr)
+  void handle_feedback(const ROS1Feedback::ConstPtr& feedback1)
   {
+    auto feedback2 = std::make_shared<ROS2Feedback>();
+    translate_feedback_1_to_2(*feedback2, *feedback1);
 
+    goalhandle_ros2_->publish_feedback(feedback2);
   }
 
-
-
-
-//TO DO: check Goal Handling for ROS 2
-//  void cancel_cb(ROS2GoalHandle gh2)
-//  {
-//    // try to find goal and cancel it
-//    std::lock_guard<std::mutex> lock(mutex_);
-//    auto it = goals_.find(gh2.getGoalID().id);
-//    if (it != goals_.end()) {
-//      std::thread([handler = it->second]() mutable {
-//          handler->cancel();
-//        }).detach();
-//    }
-//  }
-
-//  void goal_cb(ROS2GoalHandle gh2)
-//  {
-//    const std::string goal_id = gh2.getGoalID().id;
-
-//    // create a new handler for the goal
-//    std::shared_ptr<GoalHandler> handler;
-//    handler.reset(new GoalHandler(gh2, client_));
-//    std::lock_guard<std::mutex> lock(mutex_);
-//    goals_.insert(std::make_pair(goal_id, handler));
-
-//    //RCLCPP_INFO(ros1_node.sendGoal(), "Sending goal");
-//    std::thread([handler, goal_id, this]() mutable {
-//        // execute the goal remotely
-//        handler->handle();
-
-//        // clean-up
-//        std::lock_guard<std::mutex> lock(mutex_);
-//        goals_.erase(goal_id);
-//      }).detach();
-//  }
-
-//  void accepted_cb(ROS2GoalHandle gh2)
-//  {
-//    return;
-//  }
 
   static int main(const std::string & action_name, int argc, char * argv[])
   {
@@ -320,14 +312,15 @@ private:
 //    std::mutex mutex_;
 //  };
 
+  bool active_;
+
+  std::shared_ptr<ROS2GoalHandle> goalhandle_ros2_;
+
   ros::NodeHandle ros1_node_;
   rclcpp::Node::SharedPtr ros2_node_;
 
   //defining ROS1 server
 //  actionlib::ActionClient<ROS1_T> client_;
-
-//  ros::CallbackQueue callback_queue;
-//  std::unique_ptr<actionlib::ActionClient<ROS1_T>> client_;
   actionlib::SimpleActionClient<ROS1_T> client_;
 
   //defining ROS2 client
