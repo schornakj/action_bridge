@@ -32,28 +32,6 @@ using FibonacciActionBridge = ActionBridge<actionlib_tutorials::FibonacciAction,
     action_tutorials::action::Fibonacci>;
 
 template<>
-void FibonacciActionBridge::translate_goal_1_to_2(const ROS1Goal & goal1, ROS2Goal & goal2)
-{
-  goal2.order = goal1.order;
-}
-
-template<>
-void FibonacciActionBridge::translate_result_2_to_1(
-  ROS1Result & result1,
-  const ROS2Result & result2)
-{
-  result1.sequence = result2.sequence;
-}
-
-template<>
-void FibonacciActionBridge::translate_feedback_2_to_1(
-  ROS1Feedback & feedback1,
-  const ROS2Feedback & feedback2)
-{
-  feedback1.sequence = feedback2.partial_sequence;
-}
-
-template<>
 void FibonacciActionBridge::translate_goal_2_to_1(const ROS2Goal & goal2, ROS1Goal & goal1)
 {
   goal1.order = goal2.order;

@@ -218,10 +218,6 @@ private:
 
   std::mutex mutex_;
 
-  static void translate_goal_1_to_2(const ROS1Goal &, ROS2Goal &);
-  static void translate_result_2_to_1(ROS1Result &, const ROS2Result &);
-  static void translate_feedback_2_to_1(ROS1Feedback &, const ROS2Feedback &);
-
   static void translate_goal_2_to_1(const ROS2Goal &, ROS1Goal &);
   static void translate_result_1_to_2(ROS2Result &, const ROS1Result &);
   static void translate_feedback_1_to_2(ROS2Feedback &, const ROS1Feedback &);
