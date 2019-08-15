@@ -25,7 +25,7 @@
 #endif
 
 // include ROS 2
-#include "control_msgs/action/follow_joint_trajectory.hpp"
+#include <control_msgs/action/follow_joint_trajectory.hpp>
 
 template<typename T1, typename T2>
 static void copy_point(const T1 & pt1, T2 & pt2)

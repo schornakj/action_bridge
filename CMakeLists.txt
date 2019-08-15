@@ -12,7 +12,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra)
 endif()
 
 # find dependencies
@@ -40,13 +40,13 @@ ament_export_include_directories(include)
 
 include_directories(include)
 
-add_executable(action_bridge_follow_joint_trajectory_node
-    "src/action_bridge_follow_joint_trajectory.cpp"
-)
-ament_target_dependencies(action_bridge_follow_joint_trajectory_node
-    "ros1_roscpp" "ros1_actionlib" "ros1_control_msgs"
-    "rclcpp" "rclcpp_action" "control_msgs"
-)
+#add_executable(action_bridge_follow_joint_trajectory_node
+#    "src/action_bridge_follow_joint_trajectory.cpp"
+#)
+#ament_target_dependencies(action_bridge_follow_joint_trajectory_node
+#    "ros1_roscpp" "ros1_actionlib" "ros1_control_msgs"
+#    "rclcpp" "rclcpp_action" "control_msgs"
+#)
 
 add_executable(action_bridge_fibonacci_node
     "src/action_bridge_fibonacci.cpp"
@@ -67,17 +67,21 @@ ament_target_dependencies(reverse_action_bridge_fibonacci_node
     #"example_interfaces"
 )
 
-add_executable(reverse_action_bridge_follow_joint_trajectory_node
-    "src/reverse_action_bridge_follow_joint_trajectory.cpp"
-)
-ament_target_dependencies(reverse_action_bridge_follow_joint_trajectory_node
-    "ros1_roscpp" "ros1_actionlib" "ros1_control_msgs"
-    "rclcpp" "rclcpp_action" "control_msgs"
-)
+#add_executable(reverse_action_bridge_follow_joint_trajectory_node
+#    "src/reverse_action_bridge_follow_joint_trajectory.cpp"
+#)
+#ament_target_dependencies(reverse_action_bridge_follow_joint_trajectory_node
+#    "ros1_roscpp" "ros1_actionlib" "ros1_control_msgs"
+#    "rclcpp" "rclcpp_action" "control_msgs"
+#)
 
 
 
-install(TARGETS action_bridge_follow_joint_trajectory_node action_bridge_fibonacci_node reverse_action_bridge_follow_joint_trajectory_node reverse_action_bridge_fibonacci_node
+install(TARGETS
+#    action_bridge_follow_joint_trajectory_node
+    action_bridge_fibonacci_node
+#    reverse_action_bridge_follow_joint_trajectory_node
+    reverse_action_bridge_fibonacci_node
     DESTINATION lib/${PROJECT_NAME}
 )
 
