@@ -55,11 +55,11 @@ static void copy_tolerances(const T2 & t2, T1 & t1)
 }
 
 static void copy_duration_2_to_1(
-  const ros::Duration & duration2,
-  builtin_interfaces::msg::Duration & duration1)
+  const builtin_interfaces::msg::Duration & duration2,
+  ros::Duration & duration1)
 {
   duration1.sec = duration2.sec;
-  duration1.nanosec = duration2.nsec;
+  duration1.nsec = duration2.nanosec;
 }
 
 using FollowJointTrajectoryActionBridge = ActionBridge<control_msgs::FollowJointTrajectoryAction,
@@ -76,7 +76,7 @@ void FollowJointTrajectoryActionBridge::translate_goal_2_to_1(
 
   for (size_t i = 0; i < num; ++i) {
     copy_point(goal2.trajectory.points[i], goal1.trajectory.points[i]);
-    copy_duration_1_to_2(goal2.trajectory.points[i].time_from_start,
+    copy_duration_2_to_1(goal2.trajectory.points[i].time_from_start,
       goal1.trajectory.points[i].time_from_start);
   }
 
