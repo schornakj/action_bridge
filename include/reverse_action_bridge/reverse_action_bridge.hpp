@@ -148,6 +148,11 @@ public:
       std::cout << "State is SUCCEEDED: succeeding" << std::endl;
       goalhandle_ros2_->succeed(result2);
     }
+    else if (state1.state_ == actionlib::SimpleClientGoalState::PREEMPTED)
+    {
+      std::cout << "State is PREEMPTED: canceling" << std::endl;
+      goalhandle_ros2_->canceled(result2);
+    }
     else if (state1.state_ == actionlib::SimpleClientGoalState::ABORTED)
     {
       std::cout << "State is ABORTED: abort" << std::endl;
@@ -155,11 +160,12 @@ public:
     }
     else if (state1.state_ == actionlib::SimpleClientGoalState::REJECTED)
     {
-      std::cout << "State is REJECTED: cancelling" << std::endl;
-      goalhandle_ros2_->canceled(result2);  // TODO: handle differently?
+      std::cout << "State is REJECTED: aborting" << std::endl;
+      goalhandle_ros2_->abort(result2);  // TODO: handle differently?
     }
     else
     {
+      std::cout << state1.state_ << std::endl;
       std::cout << "Encountered some other (probably bad) state: abort" << std::endl;
       goalhandle_ros2_->abort(result2);
     }
