@@ -108,6 +108,6 @@ void FollowJointTrajectoryActionBridge::translate_feedback_1_to_2(
 
 int main(int argc, char * argv[])
 {
-  return FollowJointTrajectoryActionBridge::main("follow_joint_trajectory", argc, argv);
+  return FollowJointTrajectoryActionBridge::main("joint_trajectory_action", argc, argv);
 }
 
