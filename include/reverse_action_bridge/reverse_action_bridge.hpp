@@ -150,8 +150,8 @@ public:
     }
     else if (state1.state_ == actionlib::SimpleClientGoalState::PREEMPTED)
     {
-      std::cout << "State is PREEMPTED: canceling" << std::endl;
-      goalhandle_ros2_->canceled(result2);
+      std::cout << "State is PREEMPTED: abort" << std::endl;
+      goalhandle_ros2_->canceled(result2);  // TODO: handle differently?
     }
     else if (state1.state_ == actionlib::SimpleClientGoalState::ABORTED)
     {
@@ -160,8 +160,8 @@ public:
     }
     else if (state1.state_ == actionlib::SimpleClientGoalState::REJECTED)
     {
-      std::cout << "State is REJECTED: cancelling" << std::endl;
-      goalhandle_ros2_->canceled(result2);  // TODO: handle differently?
+      std::cout << "State is REJECTED: abort" << std::endl;
+      goalhandle_ros2_->abort(result2);  // TODO: This is kind of a weird case since the ROS2 side of the bridge has to accept the action before making a ROS1 client. Consider handling differently.
     }
     else
     {
